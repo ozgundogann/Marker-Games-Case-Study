@@ -9,11 +9,11 @@ namespace DefaultNamespace
     {
         [SerializeField] private InputReader inputReader;
         
-        private Dictionary<Vector3, bool> waitingLinePointsDict = new Dictionary<Vector3, bool>();
+        private Dictionary<Vector3, bool> pointAvailabilityDict = new Dictionary<Vector3, bool>();
 
         public static TableLineController Instance { get; private set; }
 
-        public Dictionary<Vector3, bool> WaitingLinePointsDict => waitingLinePointsDict;
+        public Dictionary<Vector3, bool> PointAvailabilityDict => pointAvailabilityDict;
 
         private void Awake() 
         { 
@@ -35,13 +35,13 @@ namespace DefaultNamespace
                 linePoint.transform.SetParent(transform);
                 linePoint.transform.position = new Vector3(0,0, transform.position.z - i * 2 - 2);
                 
-                waitingLinePointsDict.Add(linePoint.transform.position, true);
+                PointAvailabilityDict.Add(linePoint.transform.position, true);
             }
         }
 
-        public void SetEmpty(Vector3 point, bool isEmpty)
+        public void SetPointEmpty(Vector3 point, bool isEmpty)
         {
-            waitingLinePointsDict[point] = isEmpty;
+            pointAvailabilityDict[point] = isEmpty;
         }
     }
 }
