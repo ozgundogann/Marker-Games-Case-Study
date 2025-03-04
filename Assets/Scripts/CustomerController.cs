@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using DefaultNamespace;
 using UnityEngine;
@@ -7,12 +8,14 @@ using Random = UnityEngine.Random;
 
 public class CustomerController : MonoBehaviour
 {
+    [SerializeField] private CustomerInteractionHandler interactionHandler;
+    [SerializeField] private LineOrganizer lineOrganizer;
+    
+    
     [SerializeField] private List<Customer> initializedCustomers;
     [SerializeField] private List<Customer> walkingCustomerList;
     [SerializeField] private List<Customer> waitingInLineList;
-
     [SerializeField] private Transform ExitPointTransform;
-    
     
     public static CustomerController Instance { get; private set; }
 
@@ -41,6 +44,8 @@ public class CustomerController : MonoBehaviour
         if (!customer) return;
         walkingCustomerList.Add(customer);
         initializedCustomers.Remove(customer);
+        customer.OnReachingLine += HandleReachingLine;
+
         
         UpdateWalkingCustomersDestination();
     }
@@ -77,8 +82,6 @@ public class CustomerController : MonoBehaviour
         {
             customer.SetState(CustomerState.WALKING);
         }
-        
-        customer.OnReachingLine += HandleReachingLine;
     }
 
     private static void MoveCustomer(Customer customer, Vector3 destinationPoint)
@@ -90,7 +93,7 @@ public class CustomerController : MonoBehaviour
 
     private List<Vector3> GetAvailableLinePoints()
     {
-        return TableLineController.Instance.WaitingLinePointsDict.Keys.Where(point => TableLineController.Instance.WaitingLinePointsDict[point]).ToList();
+        return TableLineController.Instance.PointAvailabilityDict.Keys.Where(point => TableLineController.Instance.PointAvailabilityDict[point]).ToList();
     }
 
 
@@ -107,7 +110,7 @@ public class CustomerController : MonoBehaviour
         initializedCustomers.Add(customer);
     }
 
-    public void RemoveCustomer(Customer customer)
+    public void RemoveFromInitializedList(Customer customer)
     {
         initializedCustomers.Remove(customer);
     }
@@ -115,27 +118,55 @@ public class CustomerController : MonoBehaviour
     private void HandleReachingLine(Customer customer)
     {
         customer.OnReachingLine -= HandleReachingLine;
-        
+
         walkingCustomerList.Remove(customer);
+
         waitingInLineList.Add(customer);
         
         customer.SetState(CustomerState.WAITING_IN_LINE);
-        TableLineController.Instance.SetEmpty(customer.Destination, false);
+        TableLineController.Instance.SetPointEmpty(customer.Destination, false);
         
-        customer.OnInteractionEnded += HandleOnOnInteractionEnded;
+        customer.OnInteractionEnded += HandleOnInteractionEnded;
         
-        //Start Interaction
+        HandleInteraction(customer);
     }
 
-    private void HandleOnOnInteractionEnded(Customer customer)
+    private void HandleInteraction(Customer customer)
     {
-        customer.OnInteractionEnded -= HandleOnOnInteractionEnded;
+        interactionHandler.RegisterCustomer(customer);
+        interactionHandler.OnQueueUpdated();
+    }
+
+    private void HandleOnInteractionEnded(Customer customer)
+    {
+        customer.OnInteractionEnded -= HandleOnInteractionEnded;
+        
+        TableLineController.Instance.SetPointEmpty(customer.Destination, true);
+        
         MoveCustomer(customer, ExitPointTransform.position);
-        TableLineController.Instance.SetEmpty(customer.Destination, true);
+
         waitingInLineList.Remove(customer);
+        
+        ReorganizeLine();
         
         UpdateWalkingCustomersDestination();
 
+        interactionHandler.OnQueueUpdated();
+    }
+
+    private void ReorganizeLine()
+    {
+        lineOrganizer.ReorganizeCustomers(waitingInLineList);
+        waitingInLineList = lineOrganizer.GetOrganizedCustomers();
         
+        foreach (var waitingCustomer in waitingInLineList)
+        {
+            TableLineController.Instance.SetPointEmpty(waitingCustomer.Destination, true);
+
+            Vector3 availablePoint = GetAvailableLinePoints().FirstOrDefault();
+            MoveCustomer(waitingCustomer, availablePoint); //Destination Changed.
+
+            TableLineController.Instance.SetPointEmpty(waitingCustomer.Destination, false);
+        }
     }
 }
