@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 using Random = UnityEngine.Random;
@@ -25,10 +26,19 @@ public class Customer : MonoBehaviour
 
     private void OnDisable()
     {
-        CustomerController.Instance.RemoveCustomer(this);
+        CustomerController.Instance.RemoveFromInitializedList(this);
     }
     
-
+    private void Update()
+    {
+        if(agent.isStopped) return;
+        if (!agent.pathPending && agent.remainingDistance <= 0.01f)
+        {
+            agent.isStopped = true;
+            OnReachingLine?.Invoke(this);
+        }
+    }
+    
     public void SetDestination(Vector3 destination)
     {
         agent.SetDestination(destination);
@@ -64,13 +74,15 @@ public class Customer : MonoBehaviour
         TimeToReachDestination = Vector3.Distance(transform.position, destination) / agent.speed;
     }
 
-    private void Update()
+    public void StartInteraction()
     {
-        if(agent.isStopped) return;
-        if (!agent.pathPending && agent.remainingDistance <= 0.01f)
-        {
-            agent.isStopped = true;
-            OnReachingLine?.Invoke(this);
-        }
+        SetState(CustomerState.INTERACTING);
+        StartCoroutine(WaitToInteract());
+    }
+
+    IEnumerator WaitToInteract()
+    {
+        yield return new WaitForSeconds(5);
+        OnInteractionEnded?.Invoke(this);
     }
 }
