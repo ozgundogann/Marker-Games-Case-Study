@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using DefaultNamespace;
 using UnityEngine;
@@ -9,7 +10,7 @@ using Random = UnityEngine.Random;
 public class CustomerController : MonoBehaviour
 {
     [SerializeField] private CustomerInteractionHandler interactionHandler;
-    [SerializeField] private LineOrganizer lineOrganizer;
+    
     
     
     [SerializeField] private List<Customer> initializedCustomers;
@@ -17,6 +18,9 @@ public class CustomerController : MonoBehaviour
     [SerializeField] private List<Customer> waitingInLineList;
     [SerializeField] private Transform ExitPointTransform;
     
+    
+    public static event Action<List<Customer>> OnLineNeedToBeOrganized;
+    public static event Action<List<Customer>> OnLineUpdated;
     public static CustomerController Instance { get; private set; }
 
     private void Awake() 
@@ -47,10 +51,10 @@ public class CustomerController : MonoBehaviour
         customer.OnReachingLine += HandleReachingLine;
 
         
-        UpdateWalkingCustomersDestination();
+        UpdateWalkingCustomersDestinations();
     }
 
-    private void UpdateWalkingCustomersDestination()
+    private void UpdateWalkingCustomersDestinations()
     {
         Queue<Vector3> availablePoints = new Queue<Vector3>(GetAvailableLinePoints());
         List<Customer> remainingCustomers = new List<Customer>(walkingCustomerList);
@@ -118,52 +122,46 @@ public class CustomerController : MonoBehaviour
     private void HandleReachingLine(Customer customer)
     {
         customer.OnReachingLine -= HandleReachingLine;
-
-        walkingCustomerList.Remove(customer);
-
-        waitingInLineList.Add(customer);
-        
+        customer.OnInteractionEnded += HandleOnInteractionEnded;
         customer.SetState(CustomerState.WAITING_IN_LINE);
+        
         TableLineController.Instance.SetPointEmpty(customer.Destination, false);
         
-        customer.OnInteractionEnded += HandleOnInteractionEnded;
+        walkingCustomerList.Remove(customer);
+        waitingInLineList.Add(customer);
         
-        HandleInteraction(customer);
-    }
-
-    private void HandleInteraction(Customer customer)
-    {
-        interactionHandler.RegisterCustomer(customer);
-        interactionHandler.OnQueueUpdated();
+        OrganizeLine();
     }
 
     private void HandleOnInteractionEnded(Customer customer)
     {
         customer.OnInteractionEnded -= HandleOnInteractionEnded;
-        
+        interactionHandler.SetInteracting(false);
         TableLineController.Instance.SetPointEmpty(customer.Destination, true);
-        
         MoveCustomer(customer, ExitPointTransform.position);
-
         waitingInLineList.Remove(customer);
         
-        ReorganizeLine();
-        
-        UpdateWalkingCustomersDestination();
-
-        interactionHandler.OnQueueUpdated();
+        OrganizeLine();
     }
 
-    private void ReorganizeLine()
+    private void OrganizeLine()
     {
-        lineOrganizer.ReorganizeCustomers(waitingInLineList);
-        waitingInLineList = lineOrganizer.GetOrganizedCustomers();
-        
+        OnLineNeedToBeOrganized?.Invoke(waitingInLineList);
+        MoveReorganizedLine();
+        UpdateWalkingCustomersDestinations();
+        OnLineUpdated?.Invoke(waitingInLineList);
+    }
+
+    private void MoveReorganizedLine()
+    {
         foreach (var waitingCustomer in waitingInLineList)
         {
             TableLineController.Instance.SetPointEmpty(waitingCustomer.Destination, true);
 
-            Vector3 availablePoint = GetAvailableLinePoints().FirstOrDefault();
+            Vector3 availablePoint = TableLineController.Instance.GetAvailablePoint();
+            
+            if(availablePoint == Vector3.one * -1) return;
+            
             MoveCustomer(waitingCustomer, availablePoint); //Destination Changed.
 
             TableLineController.Instance.SetPointEmpty(waitingCustomer.Destination, false);
