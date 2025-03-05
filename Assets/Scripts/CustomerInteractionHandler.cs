@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -5,45 +6,41 @@ namespace DefaultNamespace
 {
     public class CustomerInteractionHandler : MonoBehaviour
     {
-        Queue<Customer> waitingCustomers = new Queue<Customer>();
+        [SerializeField] private LineOrganizer lineOrganizer;
         
         private bool isInteracting = false;
 
-        public void RegisterCustomer(Customer customer)
+        private void Start()
         {
-            waitingCustomers.Enqueue(customer);
+            CustomerController.OnLineUpdated += HandleOnLineUpdated;
         }
 
-        public void RemoveCustomer(Customer customer)
+        private void OnDestroy()
         {
-            if (waitingCustomers.Count > 0)
-            {
-                waitingCustomers.Dequeue();
-                TryStartNextInteraction();
-            }
+            CustomerController.OnLineUpdated -= HandleOnLineUpdated;
+        }
+
+        private void HandleOnLineUpdated(List<Customer> customers)
+        {
+            TryStartNextInteraction();
         }
 
         public void TryStartNextInteraction()
         {
-            if (waitingCustomers.Count == 0) return;
-            
+            if (isInteracting) return;
+
+            Customer firstCustomer = lineOrganizer.GetFirstCustomer();
+            if (!firstCustomer) return;
+
             isInteracting = true;
-            Customer nextCustomer = waitingCustomers.Peek();
-            nextCustomer.StartInteraction();
-            nextCustomer.OnInteractionEnded += HandleOnInteractionEnded;
+            firstCustomer.StartInteraction();
         }
 
-        private void HandleOnInteractionEnded(Customer customer)
+        public void SetInteracting(bool isInteracting)
         {
-            customer.OnInteractionEnded -= HandleOnInteractionEnded;
-            isInteracting = false;
-            RemoveCustomer(customer);
+            this.isInteracting = isInteracting;
         }
 
-        public void OnQueueUpdated()
-        {
-            if(!isInteracting)
-                TryStartNextInteraction();
-        }
+        
     }
 }
