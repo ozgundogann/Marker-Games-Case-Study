@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -42,6 +43,16 @@ namespace DefaultNamespace
         public void SetPointEmpty(Vector3 point, bool isEmpty)
         {
             pointAvailabilityDict[point] = isEmpty;
+        }
+
+        public Vector3 GetAvailablePoint()
+        {
+            foreach (var available in pointAvailabilityDict.Keys.Where(available => pointAvailabilityDict[available]))
+            {
+                return available;
+            }
+
+            return Vector3.one * -1;
         }
     }
 }
