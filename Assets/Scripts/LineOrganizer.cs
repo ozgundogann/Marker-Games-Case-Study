@@ -16,24 +16,27 @@ namespace DefaultNamespace
             {
                 customersInLineDict.Add(point, null);
             }
+
+            CustomerController.OnLineNeedToBeOrganized += UpdateDict;
         }
 
-        public void ReorganizeCustomers(List<Customer> customers)
+        private void OnDestroy()
         {
+            CustomerController.OnLineNeedToBeOrganized -= UpdateDict;
+        }
+
+        public void UpdateDict(List<Customer> customers)
+        {
+            customersInLineDict.Clear();
             foreach (var customer in customers)
             {
                 customersInLineDict[customer.Destination] = customer;
             }
-
-            foreach (var x in customersInLineDict.Keys)
-            {
-                Debug.Log("DEST: " + x);
-            }
         }
 
-        public List<Customer> GetOrganizedCustomers()
+        public Customer GetFirstCustomer()
         {
-            return customersInLineDict.Values.ToList();
+            return customersInLineDict.Values.Count == 0 ? null : customersInLineDict.Values.FirstOrDefault();
         }
     }
 }
