@@ -5495,6 +5495,7 @@ MonoBehaviour:
   - {fileID: 1064528039}
   - {fileID: 514078237}
   inputField: {fileID: 1863208490}
+  selectedNumberTxt: {fileID: 1805366784}
   thrownDiceCountText: {fileID: 878554341}
   totalSumText: {fileID: 1313793854}
   threeDiceSumText: {fileID: 1138435656}
@@ -5542,7 +5543,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 87162171d640419da41d5284c3502d92, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  selectedNumberTxt: {fileID: 1805366784}
 --- !u!4 &1600270654
 Transform:
   m_ObjectHideFlags: 0
