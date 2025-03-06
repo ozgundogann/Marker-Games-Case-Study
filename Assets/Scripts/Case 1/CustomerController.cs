@@ -56,7 +56,16 @@ public class CustomerController : MonoBehaviour
 
     private void UpdateWalkingCustomersDestinations()
     {
-        Queue<Vector3> availablePoints = new Queue<Vector3>(GetAvailableLinePoints());
+        Vector3 availablePoint = GetAvailableLinePoints().FirstOrDefault();
+        List<Customer> remainingCustomers = new List<Customer>(walkingCustomerList);
+
+        foreach (var remainingCustomer in remainingCustomers)
+        {
+            MoveCustomerFromStartToPoint(remainingCustomer, availablePoint);
+        }
+        
+        
+        /*Queue<Vector3> availablePoints = new Queue<Vector3>(GetAvailableLinePoints());
         List<Customer> remainingCustomers = new List<Customer>(walkingCustomerList);
         
         
@@ -74,7 +83,7 @@ public class CustomerController : MonoBehaviour
 
             MoveCustomerFromStartToPoint(fastestCustomer, destinationPoint);
             remainingCustomers.RemoveAt(0);
-        }
+        }*/
         
     }
 

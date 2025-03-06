@@ -32,7 +32,7 @@ public class Customer : MonoBehaviour
     private void Update()
     {
         if(agent.isStopped) return;
-        if (!agent.pathPending && agent.remainingDistance <= 0.01f)
+        if (!agent.pathPending && agent.remainingDistance <= 0.3f)
         {
             agent.isStopped = true;
             OnReachingLine?.Invoke(this);
@@ -54,24 +54,38 @@ public class Customer : MonoBehaviour
         currentState = newCustomerState;
     }
     
+    /*public void CalculateTimeToReachDestination(Vector3 destination)
+    {
+        float totalPathLength = 0f;
+        totalPathLength += Vector3.Distance(destination, transform.position);
+        TimeToReachDestination = totalPathLength / agent.speed;
+    }*/
+    
     public void CalculateTimeToReachDestination(Vector3 destination)
     {
-        /*float totalPathLength = 0f;
-        if(agent.path.corners.Length > 1)
+        NavMeshPath path = new NavMeshPath();
+        if (agent.CalculatePath(destination, path)) // Geçerli bir yol var mı?
         {
-            for (int i = 0; i < agent.path.corners.Length - 1; i++)
-            {
-                totalPathLength += Vector3.Distance(agent.path.corners[i], agent.path.corners[i + 1]);
-            }
+            float totalPathLength = GetPathLength(path); // Gerçek yol uzunluğunu al
+            TimeToReachDestination = totalPathLength / agent.speed; // Süreyi hesapla
         }
-        else if(agent.path.corners.Length == 1)
+        else
         {
-            totalPathLength = agent.remainingDistance;
+            TimeToReachDestination = Vector3.Distance(transform.position, destination); // Ulaşamazsa sonsuz yap
         }
-        
-        TimeToReachDestination = totalPathLength / agent.speed;*/
-        
-        TimeToReachDestination = Vector3.Distance(transform.position, destination) / agent.speed;
+    }
+
+    private float GetPathLength(NavMeshPath path)
+    {
+        float length = 0f;
+
+        // Path'in her noktasını gezerek uzunluğu hesapla
+        for (int i = 1; i < path.corners.Length; i++)
+        {
+            length += Vector3.Distance(path.corners[i - 1], path.corners[i]);
+        }
+
+        return length;
     }
 
     public void StartInteraction()

@@ -6,7 +6,7 @@ public class CustomerInitializer : MonoBehaviour
     [SerializeField] private int objectCount = 30; 
     [SerializeField] private float radius = 10f; 
 
-    public static readonly int MaxCustomerCount = 10;
+    public static readonly int MaxCustomerCount = 30;
     void Start()
     {
         SpawnObjects();
@@ -26,7 +26,7 @@ public class CustomerInitializer : MonoBehaviour
                 0f,
                 Mathf.Sin(radian) * randomRadius
             );
-
+            position += transform.position;
             Customer newCustomer = Instantiate(prefab, transform);
             newCustomer.transform.position = position;
         }

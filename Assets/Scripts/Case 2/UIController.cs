@@ -57,12 +57,39 @@ namespace Case_2
             if (int.TryParse(input, out int faces) && faces > 1)
             {
                 DiceThrowingManager.MaxDiceFaces = faces;
+                if(!CheckIfTargetSumPossible())
+                {
+                    Debug.LogError("Input value is not possible");
+                    return;
+                }
+                int maxSum = faces * 3; 
                 
-                //TODO
+                for (int i = 0; i < numberSelectionButtons.Count; i++)
+                {
+                    int textValue = i + 3; 
+
+                    numberSelectionButtons[i].gameObject.SetActive(textValue <= maxSum);
+                }
             }
             
             
         }
+        
+        private bool CheckIfTargetSumPossible()
+        {
+            int maxPerThrow = DiceThrowingManager.MaxDiceFaces * 3;
+
+            int worstCaseTotal = 9;
+            
+            int remainingThrows = 20 - 3;
+            int maxRemainingTotal = remainingThrows * maxPerThrow;
+
+            int targetRemainingTotal = 200 - worstCaseTotal;
+
+            return maxRemainingTotal >= targetRemainingTotal;
+        }
+
+
 
         private void HandleOnValuesUpdated(int thrownDiceAmount, int diceValuesSum, int threeDiceValuesSum)
         {
